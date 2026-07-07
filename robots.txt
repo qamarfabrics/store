@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /seed.html
+Disallow: /cart.html
+Disallow: /checkout.html
+Disallow: /account.html
+Disallow: /login.html
+
+Sitemap: https://YOUR-USERNAME.github.io/qamar-fabrics/sitemap.xml

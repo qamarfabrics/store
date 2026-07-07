@@ -1,0 +1,34 @@
+rules_version = '2';
+
+// Deploy via Firebase Console → Firestore Database → Rules,
+// or with the Firebase CLI: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Product catalog: anyone can read, nobody can write from the
+    // client (use seed.html once, or the Firebase Console, or set
+    // up a custom admin claim if you want an in-app admin panel).
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Orders: any signed-in user can create an order. Reading is
+    // limited to the order's own customer email matching the
+    // signed-in user's email — good enough for a small storefront;
+    // tighten with a stored ownerUid field if you want stricter rules.
+    match /orders/{orderId} {
+      allow create: if true; // allow guest checkout
+      allow read: if request.auth != null &&
+                     request.auth.token.email == resource.data.customer.email;
+      allow update, delete: if false;
+    }
+
+    // Contact form messages: anyone can create, nobody can read/list
+    // from the client (view them in the Firebase Console instead).
+    match /messages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+  }
+}

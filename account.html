@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account | Qamar Fabrics</title>
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div id="qf-header"></div>
+
+<main id="main">
+  <section class="container" style="padding:40px 0 70px;max-width:760px;">
+    <div id="accountRoot"><p>Checking sign-in status…</p></div>
+  </section>
+</main>
+
+<div id="qf-footer"></div>
+
+<script type="module">
+  import { injectLayout } from "./assets/js/components.js";
+  import { watchAuth, logout } from "./assets/js/auth.js";
+  import { db, collection, getDocs, query, where, orderBy } from "./assets/js/firebase-config.js";
+  import { formatPKR } from "./assets/js/components.js";
+
+  injectLayout();
+
+  const root = document.getElementById("accountRoot");
+
+  watchAuth(async (user) => {
+    if (!user) {
+      root.innerHTML = `
+        <div class="empty-state">
+          <h2>You're not signed in</h2>
+          <p>Sign in to see your order history and save your delivery details.</p>
+          <a class="btn btn-primary" href="login.html">Log in / Create account</a>
+        </div>`;
+      return;
+    }
+
+    root.innerHTML = `
+      <div class="section-head"><h1 style="margin:0;">Hi, ${user.displayName || user.email}</h1>
+        <button class="btn btn-outline" id="logoutBtn">Log out</button>
+      </div>
+      <h3>Order history</h3>
+      <div id="orderList"><p>Loading orders…</p></div>
+    `;
+    document.getElementById("logoutBtn").onclick = () => logout();
+
+    try {
+      const q = query(collection(db, "orders"), where("customer.email", "==", user.email), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      const listEl = document.getElementById("orderList");
+      if (snap.empty) {
+        listEl.innerHTML = `<p style="color:var(--ink-600);">No orders yet — <a href="shop.html">start shopping</a>.</p>`;
+      } else {
+        listEl.innerHTML = snap.docs.map(d => {
+          const o = d.data();
+          return `<div class="cart-line" style="grid-template-columns:1fr auto;">
+            <div>
+              <div class="line-title">Order #${d.id.slice(0,8)}</div>
+              <div class="line-meta">${(o.items||[]).length} item(s) · ${o.status || "pending"}</div>
+            </div>
+            <div class="price">${formatPKR(o.total||0)}</div>
+          </div>`;
+        }).join("");
+      }
+    } catch (err) {
+      console.warn(err);
+      document.getElementById("orderList").innerHTML = `<p style="color:var(--ink-600);">Couldn't load orders yet — this needs a composite Firestore index the first time; check the browser console for a one-click link to create it.</p>`;
+    }
+  });
+</script>
+</body>
+</html>

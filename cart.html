@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Cart | Qamar Fabrics</title>
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div id="qf-header"></div>
+
+<main id="main">
+  <div class="container"><nav class="breadcrumb"><a href="index.html">Home</a> / Cart</nav></div>
+  <section class="container" style="padding:20px 0 40px;">
+    <h1>Your Cart</h1>
+  </section>
+
+  <section class="container cart-layout">
+    <div id="cartItems"></div>
+    <aside class="summary-card">
+      <h3 style="margin-top:0;">Order Summary</h3>
+      <div class="summary-row"><span>Subtotal</span><span id="sumSubtotal">Rs 0</span></div>
+      <div class="summary-row"><span>Delivery</span><span id="sumDelivery">Rs 0</span></div>
+      <div class="summary-row total"><span>Total</span><span id="sumTotal">Rs 0</span></div>
+      <a href="checkout.html" class="btn btn-primary btn-block" id="checkoutBtn">Proceed to Checkout</a>
+    </aside>
+  </section>
+</main>
+
+<div id="qf-footer"></div>
+
+<script type="module">
+  import { injectLayout } from "./assets/js/components.js";
+  import { getCart, saveCart, cartTotal, formatPKR, swatchSVG } from "./assets/js/app.js";
+
+  injectLayout();
+
+  function render() {
+    const cart = getCart();
+    const itemsEl = document.getElementById("cartItems");
+    if (!cart.length) {
+      itemsEl.innerHTML = `<div class="empty-state"><h2>Your cart is empty</h2><p>Fabric doesn't add itself.</p><a class="btn btn-primary" href="shop.html">Browse fabric</a></div>`;
+      document.getElementById("checkoutBtn").setAttribute("aria-disabled","true");
+      document.getElementById("checkoutBtn").style.pointerEvents = "none";
+      document.getElementById("checkoutBtn").style.opacity = ".5";
+    } else {
+      itemsEl.innerHTML = cart.map(i => `
+        <div class="cart-line" data-id="${i.id}">
+          <div style="width:88px;aspect-ratio:1;border-radius:4px;overflow:hidden;">${swatchSVG(i.colorSeed, i.name)}</div>
+          <div>
+            <div class="line-title">${i.name}</div>
+            <div class="line-meta">${i.brandLine || ""}</div>
+            <div class="qty-stepper" style="margin-top:8px;width:110px;">
+              <button type="button" class="qmin">–</button>
+              <input type="text" class="qval" value="${i.qty}" inputmode="numeric">
+              <button type="button" class="qplus">+</button>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="price">${formatPKR(i.price * i.qty)}</div>
+            <button class="remove-link" style="margin-top:10px;background:none;border:none;cursor:pointer;">Remove</button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    const subtotal = cartTotal(cart);
+    const delivery = subtotal > 0 && subtotal < 3000 ? 250 : 0;
+    document.getElementById("sumSubtotal").textContent = formatPKR(subtotal);
+    document.getElementById("sumDelivery").textContent = delivery ? formatPKR(delivery) : "Free";
+    document.getElementById("sumTotal").textContent = formatPKR(subtotal + delivery);
+
+    itemsEl.querySelectorAll(".cart-line").forEach(line => {
+      const id = line.dataset.id;
+      line.querySelector(".qmin").onclick = () => changeQty(id, -1);
+      line.querySelector(".qplus").onclick = () => changeQty(id, 1);
+      line.querySelector(".qval").onchange = (e) => setQty(id, +e.target.value || 1);
+      line.querySelector(".remove-link").onclick = () => removeItem(id);
+    });
+  }
+
+  function changeQty(id, delta) {
+    const cart = getCart();
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    item.qty = Math.max(1, item.qty + delta);
+    saveCart(cart);
+    render();
+  }
+  function setQty(id, qty) {
+    const cart = getCart();
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    item.qty = Math.max(1, qty);
+    saveCart(cart);
+    render();
+  }
+  function removeItem(id) {
+    saveCart(getCart().filter(i => i.id !== id));
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>

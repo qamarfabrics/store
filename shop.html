@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shop Unstitched Fabric — Men, Women & Kids | Qamar Fabrics</title>
+<meta name="description" content="Browse unstitched lawn, khaddar, karandi, linen and silk fabric for men, women and kids. Filter by fabric, brand line and price. Nationwide delivery in Pakistan.">
+<link rel="canonical" href="https://YOUR-USERNAME.github.io/qamar-fabrics/shop.html">
+<meta name="robots" content="index, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div id="qf-header"></div>
+
+<main id="main">
+  <div class="container">
+    <nav class="breadcrumb"><a href="index.html">Home</a> / <span id="crumbLabel">Shop</span></nav>
+  </div>
+
+  <section class="container" style="padding:28px 0 70px;">
+    <div class="section-head">
+      <h1 id="pageTitle" style="margin:0;">All Fabric</h1>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters" id="quickChips">
+        <button class="chip" data-cat="">All</button>
+        <button class="chip" data-cat="men">Men</button>
+        <button class="chip" data-cat="women">Women</button>
+        <button class="chip" data-cat="kids">Kids</button>
+        <button class="chip" data-sale="1">On Sale</button>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <label class="visually-hidden" for="sortSelect">Sort products</label>
+        <select id="sortSelect" class="sort-select">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating">Top Rated</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="shop-layout">
+      <aside class="filter-panel">
+        <div class="filter-group">
+          <h4>Fabric</h4>
+          <div id="fabricFilters"></div>
+        </div>
+        <div class="filter-group">
+          <h4>Brand Line</h4>
+          <div id="brandFilters"></div>
+        </div>
+        <div class="filter-group">
+          <h4>Search</h4>
+          <input type="search" id="searchBox" placeholder="Search fabric, colour…" style="width:100%;padding:9px 12px;border:1px solid var(--line-200);border-radius:4px;">
+        </div>
+      </aside>
+
+      <div>
+        <p id="resultCount" style="font-size:.85rem;color:var(--ink-600);margin-bottom:16px;"></p>
+        <div class="product-grid" id="shopGrid" aria-live="polite">
+          <p>Loading fabric…</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="qf-footer"></div>
+
+<script type="module">
+  import { injectLayout } from "./assets/js/components.js";
+  import { fetchAllProducts, filterProducts, productCardHTML } from "./assets/js/app.js";
+
+  injectLayout();
+
+  const params = new URLSearchParams(location.search);
+  const state = {
+    category: params.get("category") || "",
+    fabric: "",
+    brandLine: "",
+    sale: params.get("sale") === "1",
+    sort: "featured",
+    q: params.get("q") || ""
+  };
+
+  const titles = { men: "Men's Unstitched Fabric", women: "Women's Unstitched Fabric", kids: "Kids' Unstitched Fabric", "": "All Fabric" };
+
+  let ALL = [];
+
+  function buildFacetButtons(container, values, key) {
+    container.innerHTML = values.map(v =>
+      `<label><input type="radio" name="${key}" value="${v}"> ${v}</label>`
+    ).join("") + `<label><input type="radio" name="${key}" value="" checked> Any</label>`;
+    container.querySelectorAll("input").forEach(inp => {
+      inp.addEventListener("change", () => { state[key] = inp.value; render(); });
+    });
+  }
+
+  function updateChips() {
+    document.querySelectorAll("#quickChips .chip").forEach(btn => {
+      const isSale = btn.dataset.sale;
+      const isCat = btn.dataset.cat;
+      let active = false;
+      if (isSale) active = state.sale;
+      else active = state.category === isCat;
+      btn.classList.toggle("active", active);
+    });
+  }
+
+  function render() {
+    const filtered = filterProducts(ALL, state);
+    document.getElementById("shopGrid").innerHTML = filtered.length
+      ? filtered.map(productCardHTML).join("")
+      : `<div class="empty-state" style="grid-column:1/-1;"><h2>No fabric matches those filters</h2><p>Try clearing a filter or searching a different term.</p></div>`;
+    document.getElementById("resultCount").textContent = `${filtered.length} item${filtered.length===1?"":"s"}`;
+    document.getElementById("pageTitle").textContent = titles[state.category] ?? "All Fabric";
+    document.getElementById("crumbLabel").textContent = titles[state.category] ?? "Shop";
+    updateChips();
+  }
+
+  document.getElementById("quickChips").addEventListener("click", (e) => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    if (btn.dataset.sale !== undefined) { state.sale = !state.sale; }
+    else { state.category = btn.dataset.cat; state.sale = false; }
+    render();
+  });
+  document.getElementById("sortSelect").addEventListener("change", (e) => { state.sort = e.target.value; render(); });
+  document.getElementById("searchBox").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+
+  (async () => {
+    ALL = await fetchAllProducts();
+    buildFacetButtons(document.getElementById("fabricFilters"), [...new Set(ALL.map(p=>p.fabric))].sort(), "fabric");
+    buildFacetButtons(document.getElementById("brandFilters"), [...new Set(ALL.map(p=>p.brandLine))].sort(), "brandLine");
+    render();
+  })();
+</script>
+</body>
+</html>

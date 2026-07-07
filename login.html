@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In | Qamar Fabrics</title>
+<meta name="robots" content="noindex, follow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div id="qf-header"></div>
+
+<main id="main">
+  <div class="auth-card">
+    <div class="auth-toggle">
+      <button id="tabLogin" class="active" type="button">Log In</button>
+      <button id="tabRegister" type="button">Create Account</button>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-field"><label for="liEmail">Email</label><input id="liEmail" type="email" required></div>
+      <div class="form-field"><label for="liPass">Password</label><input id="liPass" type="password" required></div>
+      <button class="btn btn-primary btn-block" type="submit">Log In</button>
+    </form>
+
+    <form id="registerForm" style="display:none;">
+      <div class="form-field"><label for="roName">Full name</label><input id="roName" required></div>
+      <div class="form-field"><label for="roEmail">Email</label><input id="roEmail" type="email" required></div>
+      <div class="form-field"><label for="roPass">Password</label><input id="roPass" type="password" minlength="6" required></div>
+      <button class="btn btn-primary btn-block" type="submit">Create Account</button>
+    </form>
+
+    <div class="divider-text">or</div>
+    <button class="btn btn-outline btn-block" id="googleBtn" type="button">Continue with Google</button>
+    <p id="authError" style="color:var(--rani-600);font-size:.85rem;margin-top:14px;"></p>
+  </div>
+</main>
+
+<div id="qf-footer"></div>
+
+<script type="module">
+  import { injectLayout } from "./assets/js/components.js";
+  import { loginWithEmail, registerWithEmail, loginWithGoogle, friendlyAuthError, watchAuth } from "./assets/js/auth.js";
+
+  injectLayout();
+
+  watchAuth(user => { if (user) location.href = "account.html"; });
+
+  const tabLogin = document.getElementById("tabLogin");
+  const tabRegister = document.getElementById("tabRegister");
+  const loginForm = document.getElementById("loginForm");
+  const registerForm = document.getElementById("registerForm");
+  const errEl = document.getElementById("authError");
+
+  tabLogin.onclick = () => { tabLogin.classList.add("active"); tabRegister.classList.remove("active"); loginForm.style.display="block"; registerForm.style.display="none"; errEl.textContent=""; };
+  tabRegister.onclick = () => { tabRegister.classList.add("active"); tabLogin.classList.remove("active"); registerForm.style.display="block"; loginForm.style.display="none"; errEl.textContent=""; };
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errEl.textContent = "";
+    try { await loginWithEmail(document.getElementById("liEmail").value, document.getElementById("liPass").value); }
+    catch (err) { errEl.textContent = friendlyAuthError(err); }
+  });
+
+  registerForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errEl.textContent = "";
+    try {
+      await registerWithEmail(document.getElementById("roName").value, document.getElementById("roEmail").value, document.getElementById("roPass").value);
+    } catch (err) { errEl.textContent = friendlyAuthError(err); }
+  });
+
+  document.getElementById("googleBtn").addEventListener("click", async () => {
+    errEl.textContent = "";
+    try { await loginWithGoogle(); }
+    catch (err) { errEl.textContent = friendlyAuthError(err); }
+  });
+</script>
+</body>
+</html>

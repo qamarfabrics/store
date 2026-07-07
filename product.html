@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitleTag">Product | Qamar Fabrics</title>
+<meta name="description" id="metaDesc" content="Unstitched fabric from Qamar Fabrics.">
+<link rel="canonical" id="canonicalLink" href="https://YOUR-USERNAME.github.io/qamar-fabrics/product.html">
+<meta name="robots" content="index, follow">
+<meta property="og:type" content="product">
+<meta property="og:title" id="ogTitle" content="Qamar Fabrics">
+<meta property="og:description" id="ogDesc" content="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div id="qf-header"></div>
+
+<main id="main">
+  <div class="container">
+    <nav class="breadcrumb" id="breadcrumb"><a href="index.html">Home</a> / <a href="shop.html">Shop</a> / <span id="crumbName">Product</span></nav>
+  </div>
+
+  <section class="container pdp" id="pdpRoot">
+    <p>Loading…</p>
+  </section>
+
+  <section class="container" style="padding:0 0 70px;">
+    <div class="section-head"><h2>You might also like</h2></div>
+    <div class="product-grid" id="relatedGrid"></div>
+  </section>
+</main>
+
+<div id="qf-footer"></div>
+
+<script type="module">
+  import { injectLayout } from "./assets/js/components.js";
+  import { fetchAllProducts, fetchProductBySlug, filterProducts, productCardHTML, addToCart, formatPKR, swatchSVG } from "./assets/js/app.js";
+
+  injectLayout();
+
+  const slug = new URLSearchParams(location.search).get("slug");
+  const root = document.getElementById("pdpRoot");
+
+  function starRating(r) {
+    const full = Math.round(r);
+    return "★".repeat(full) + "☆".repeat(5-full);
+  }
+
+  (async () => {
+    if (!slug) { root.innerHTML = `<div class="empty-state"><h2>No product selected</h2><p><a href="shop.html">Back to shop</a></p></div>`; return; }
+    const p = await fetchProductBySlug(slug);
+    if (!p) { root.innerHTML = `<div class="empty-state"><h2>We couldn't find that fabric</h2><p><a href="shop.html">Back to shop</a></p></div>`; return; }
+
+    document.title = (p.seoTitle || p.name) + " | Qamar Fabrics";
+    document.getElementById("metaDesc").setAttribute("content", p.seoDescription || p.description.slice(0,155));
+    document.getElementById("ogTitle").setAttribute("content", p.name);
+    document.getElementById("ogDesc").setAttribute("content", p.seoDescription || p.description.slice(0,155));
+    document.getElementById("canonicalLink").setAttribute("href", `https://YOUR-USERNAME.github.io/qamar-fabrics/product.html?slug=${p.slug}`);
+    document.getElementById("crumbName").textContent = p.name;
+
+    const price = p.salePrice || p.price;
+
+    root.innerHTML = `
+      <div>
+        <div class="pdp-gallery-main">${swatchSVG(p.colorSeed, p.name)}</div>
+        <div class="pdp-thumbs">
+          <button class="active">${swatchSVG(p.colorSeed, p.name+" 1")}</button>
+          <button>${swatchSVG(p.colorSeed, p.name+" 2")}</button>
+          <button>${swatchSVG(p.colorSeed, p.name+" 3")}</button>
+        </div>
+      </div>
+      <div class="pdp-info">
+        <a class="brand-link" href="shop.html?q=${encodeURIComponent(p.brandLine||'')}">${p.brandLine || ""}</a>
+        <h1>${p.name}</h1>
+        <div style="color:var(--turmeric-700);font-size:.9rem;">${starRating(p.rating||4.5)} <span style="color:var(--ink-600);">(${p.reviews||0} reviews)</span></div>
+        <div class="pdp-price">
+          ${p.salePrice ? `<span class="old">${formatPKR(p.price)}</span>` : ""}
+          <span class="now">${formatPKR(price)}</span>
+        </div>
+        <div class="stock-line">${p.stock > 0 ? `In stock — ${p.stock} lengths available` : "Out of stock"}</div>
+        <p class="pdp-desc">${p.description}</p>
+
+        <div class="qty-row">
+          <div class="qty-stepper">
+            <button type="button" id="qtyMinus" aria-label="Decrease quantity">–</button>
+            <input type="text" id="qtyInput" value="1" inputmode="numeric" aria-label="Quantity">
+            <button type="button" id="qtyPlus" aria-label="Increase quantity">+</button>
+          </div>
+          <span style="font-size:.85rem;color:var(--ink-600);">suit(s)</span>
+        </div>
+
+        <div class="pdp-actions">
+          <button class="btn btn-primary" id="addToCartBtn" ${p.stock<=0?"disabled":""}>Add to Cart</button>
+          <a class="btn btn-outline" href="cart.html" id="buyNowBtn">Buy Now</a>
+        </div>
+
+        <table class="attr-table">
+          <tr><td>SKU</td><td>${p.sku}</td></tr>
+          <tr><td>Fabric</td><td>${p.fabric}</td></tr>
+          <tr><td>Meterage</td><td>${p.meters}</td></tr>
+          <tr><td>Category</td><td style="text-transform:capitalize;">${p.category}</td></tr>
+          <tr><td>Delivery</td><td>3–6 working days nationwide, cash on delivery available</td></tr>
+        </table>
+      </div>
+    `;
+
+    const qtyInput = document.getElementById("qtyInput");
+    document.getElementById("qtyMinus").onclick = () => { qtyInput.value = Math.max(1, (+qtyInput.value||1) - 1); };
+    document.getElementById("qtyPlus").onclick = () => { qtyInput.value = (+qtyInput.value||1) + 1; };
+    document.getElementById("addToCartBtn").onclick = () => addToCart(p, +qtyInput.value || 1);
+    document.getElementById("buyNowBtn").addEventListener("click", () => addToCart(p, +qtyInput.value || 1));
+
+    // Product JSON-LD for SEO / AI rich results
+    const ld = document.createElement("script");
+    ld.type = "application/ld+json";
+    ld.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: p.name,
+      description: p.description,
+      sku: p.sku,
+      brand: { "@type": "Brand", name: p.brandLine || "Qamar Fabrics" },
+      aggregateRating: p.reviews ? { "@type": "AggregateRating", ratingValue: p.rating, reviewCount: p.reviews } : undefined,
+      offers: {
+        "@type": "Offer",
+        priceCurrency: "PKR",
+        price: String(price),
+        availability: p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+        url: `https://YOUR-USERNAME.github.io/qamar-fabrics/product.html?slug=${p.slug}`
+      }
+    });
+    document.head.appendChild(ld);
+
+    // Related products
+    const all = await fetchAllProducts();
+    const related = filterProducts(all, { category: p.category }).filter(x => x.id !== p.id).slice(0, 4);
+    document.getElementById("relatedGrid").innerHTML = related.map(productCardHTML).join("");
+  })();
+</script>
+</body>
+</html>

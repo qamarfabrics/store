@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seed Catalog (Admin) | Qamar Fabrics</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<main style="max-width:640px;margin:60px auto;padding:0 24px;">
+  <h1>Seed Firestore catalog</h1>
+  <p style="color:var(--ink-600);">
+    This page pushes the sample products in <code>assets/js/products-data.js</code> into your
+    Firestore <code>products</code> collection. Run it once after setting up Firebase, then delete
+    this file (or leave it — it's excluded from search engines and safe to re-run; it just
+    overwrites the same product IDs).
+  </p>
+  <button class="btn btn-primary" id="seedBtn">Seed Products Now</button>
+  <p id="seedStatus" style="margin-top:16px;font-family:var(--font-mono);font-size:.85rem;"></p>
+</main>
+
+<script type="module">
+  import { db, doc, setDoc } from "./assets/js/firebase-config.js";
+  import { PRODUCTS } from "./assets/js/products-data.js";
+  import { collection } from "./assets/js/firebase-config.js";
+
+  document.getElementById("seedBtn").addEventListener("click", async () => {
+    const statusEl = document.getElementById("seedStatus");
+    statusEl.textContent = "Seeding…";
+    let count = 0;
+    try {
+      for (const p of PRODUCTS) {
+        await setDoc(doc(collection(db, "products"), p.id), p);
+        count++;
+        statusEl.textContent = `Seeded ${count} / ${PRODUCTS.length}…`;
+      }
+      statusEl.textContent = `Done — ${count} products written to Firestore.`;
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "Error: " + err.message + " — check your Firebase config and Firestore rules.";
+    }
+  });
+</script>
+</body>
+</html>
